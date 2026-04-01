@@ -8,7 +8,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-dev-key-change
 
 DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1','https://edumerge-pearl.vercel.app','https://edumerge.onrender.com']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1','edumerge-pearl.vercel.app','edumerge.onrender.com']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
