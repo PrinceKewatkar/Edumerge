@@ -239,18 +239,10 @@ DB_PORT=5432
 2. View Dashboard for statistics
 3. Monitor seat filling, pending documents, pending fees
 
-## AI Tools Used
-
-This project was developed with assistance from Claude Code (Anthropic) for:
-- Project architecture and structure
-- Django models and API endpoints
-- React components and state management
-- Documentation
-
 ## License
 
-This project is created for educational/assessment purposes.
+This project is created for assessment purposes.
 
 ## Support
 
-For issues or questions, please contact deepak@edumerge.com
+For issues or questions, please contact princekewatkar77@gmail.com
