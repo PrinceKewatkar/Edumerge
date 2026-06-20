@@ -1,0 +1,81 @@
+name: Build & Deploy on PR Merge
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - developed
+
+jobs:
+  build-and-deploy:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Adoptium JDK 8
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '8'
+
+      - name: Install Maven
+        run: |
+          sudo apt update
+          sudo apt install -y maven
+          mvn -version
+
+      - name: Cache Maven Dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-${{ runner.os }}-
+
+      - name: Build with Maven
+        run: |
+          cd eqomply-root
+          mvn clean install -Pqa-internal
+          
+      - name: Install AWS CLI
+        run: |
+          ARCH=$(uname -m)
+          if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+            URL="https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip"
+          else
+            URL="https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+          fi
+          curl "$URL" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
+          aws --version
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Build admin-qa-internal
+        run: |
+          WORKSPACE=$(pwd)
+          cd eqomply-root/eqomply-deployment/docker
+          chmod +x run-eqomply.sh
+          projectRoot=$WORKSPACE/eqomply-root dockerAdminRoot=/eqomply-admin-service ./run-eqomply.sh --create admin-qa-internal
+
+      - name: Deploy on Server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.QA_INTERNAL_DEPLOY_HOST }}
+          username: ${{ secrets.QA_INTERNAL_DEPLOY_USER }}
+          key: ${{ secrets.QA_INTERNAL_DEPLOY_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/eqomply-qa-internal
+            ls
+            aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 755530952014.dkr.ecr.ap-south-1.amazonaws.com
+            docker compose pull
+            docker compose up -d
