@@ -7,6 +7,28 @@ on:
     branches:
       - developed
 
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'qa-internal'
+        type: choice
+        options:
+          - qa-internal
+          - staging
+          - production
+      image_tag:
+        description: 'Docker image tag'
+        required: false
+        default: 'latest'
+        type: string
+      skip_tests:
+        description: 'Skip tests?'
+        required: false
+        default: false
+        type: boolean
+
 jobs:
   build-and-deploy:
     if: github.event.pull_request.merged == true
